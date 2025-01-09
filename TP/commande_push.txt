@@ -1,0 +1,4 @@
+Cd C:\Users\maxen\Desktop\Maxence\IUT\BUT1\S1\SAE 1.5 Traiter des données\SAE1.5 GitHub
+Git add .
+Git commit -m"message"
+Git push
