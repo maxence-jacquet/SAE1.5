@@ -1,77 +1,101 @@
-import matplotlib.pyplot as plt
-from collections import Counter
+import markdown
+import webbrowser
 
-def parse_ics(file_path, attribute):
-    """
-    Fonction pour analyser le contenu du fichier .ics et extraire les informations nécessaires
-    pour un attribut donné sous forme de dictionnaire.
-    """
-    with open(file_path, 'r') as file:
-        ics_content = file.read()
+# Lecture du fichier
+with open(r"C:\Users\maxen\Desktop\Maxence\IUT\BUT1\S1\SAE 1.5 Traiter des données\SAE1.5 GitHub\Projet\DumpFile.txt", "r") as fh:
+    ress = fh.read().split('\n')
 
-    event_data_global = []
-    event_data = {}
-    lines = ics_content.splitlines()
-    
-    for line in lines:
-        line = line.strip()
-        if line.startswith("BEGIN:VEVENT"):
-            event_data = {}
-        elif line.startswith("END:VEVENT"):
-            event_data_global.append(event_data)
-        elif line.startswith(f"{attribute}:"):
-            value = line.replace(f"{attribute}:", "").strip()
-            event_data[attribute] = value if value else "vide"
+valeur = []
 
-    return event_data_global
+def lecture():
+    for row in ress:
+        if row.startswith("\t"):
+            continue
+        construction_liste(row)
 
-def plot_event_distribution(events, attribute, output_file):
-    """
-    Fonction pour créer un diagramme à barres montrant la répartition des événements
-    pour un attribut donné.
-    """
-    # Extraire les valeurs de l'attribut des événements
-    values = [event.get(attribute, "vide") for event in events]
-    
-    # Compter les occurrences de chaque valeur
-    value_counts = Counter(values)
-    
-    # Données pour le diagramme
-    labels = list(value_counts.keys())
-    counts = list(value_counts.values())
-    
-    # Créer le diagramme
-    plt.figure(figsize=(10, 6))
-    plt.bar(labels, counts, color='skyblue')
-    plt.xlabel(attribute, fontsize=12)
-    plt.ylabel("Nombre d'événements", fontsize=12)
-    plt.title(f"Répartition des événements par {attribute}", fontsize=14)
-    plt.xticks(rotation=45, ha="right")
-    
-    # Sauvegarder le diagramme
-    plt.tight_layout()
-    plt.savefig(output_file)
-    plt.close()
-    print(f"Diagramme sauvegardé dans {output_file}")
+def construction_liste(row):
+    if "IP" in row:
+        txt_split = row.split(">")
+        txt_split2 = txt_split[0].split("IP")
+        heure = txt_split2[0].strip()
+        IP_source = txt_split2[1].strip()
 
-def main():
-    # Chemin du fichier .ics
-    ics_file_path = "ADE_RT1_Septembre2023_Decembre2023.ics"
-    output_image = "event_distribution.png"
-    
-    # Demander à l'utilisateur de choisir l'attribut
-    attribute = input("Entrez l'attribut à analyser (par exemple, LOCATION, SUMMARY, DTSTART) : ").strip().upper()
-    
-    # Analyse du fichier
-    events = parse_ics(ics_file_path, attribute)
+        txt_split5 = txt_split[1].split(": ")
+        IP_destination = txt_split5[0].strip()
+        txt_split6 = txt_split5[1]
+        txt_split7 = txt_split6.split(", ")
 
-    # Vérifier si des événements ont été trouvés pour l'attribut donné
-    if not any(attribute in event for event in events):
-        print(f"Aucun événement trouvé pour l'attribut {attribute}.")
-        return
+        txt_flag = txt_split7[0].strip()
+        txt_seq = txt_split7[1].strip() if len(txt_split7) > 1 else ""
+        txt_ack = txt_split7[2].strip() if len(txt_split7) > 2 else ""
+        txt_win = txt_split7[3].strip() if len(txt_split7) > 3 else ""
+        txt_contenu_option = f"[{txt_split7[4].strip()}]" if len(txt_split7) > 4 and 'options' in txt_split7[4] else ""
+        txt_leght = txt_split7[-1].strip() if txt_split7 else ""
 
-    # Créer et enregistrer le diagramme
-    plot_event_distribution(events, attribute, output_image)
+        evenement = f"{heure};{IP_source};{IP_destination};{txt_flag};{txt_seq};{txt_ack};{txt_win};{txt_contenu_option};{txt_leght}"
+        valeur.append(evenement)
 
-if __name__ == "__main__":
-    main()
+lecture()
+
+# Générer le contenu Markdown avec un tableau
+titre = "Heure;IP Source;IP Destination;Flag;Seq;Ack;Win;Option;Length"
+headers = titre.split(";")
+markdown_content = f"| {' | '.join(headers)} |\n"
+markdown_content += f"| {' | '.join(['---'] * len(headers))} |\n"
+
+for row in valeur:
+    markdown_content += f"| {' | '.join(row.split(';'))} |\n"
+
+# Sauvegarder dans un fichier Markdown
+markdown_file = r'C:\Users\maxen\Desktop\Maxence\IUT\BUT1\S1\SAE 1.5 Traiter des données\SAE1.5 GitHub\Projet\resultat.md'
+with open(markdown_file, "w", encoding="utf-8") as md_file:
+    md_file.write(markdown_content)
+
+# Convertir le Markdown en HTML avec une structure de tableau
+html_content = markdown.markdown(markdown_content, extensions=['tables'])
+
+# Ajouter une structure HTML de base pour le rendu
+html_with_structure = f"""
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Résultat TCPDump</title>
+    <style>
+        body {{
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }}
+        table {{
+            width: 100%;
+            border-collapse: collapse;
+        }}
+        table, th, td {{
+            border: 1px solid black;
+        }}
+        th, td {{
+            padding: 8px;
+            text-align: left;
+        }}
+        th {{
+            background-color: #f4f4f4;
+        }}
+    </style>
+</head>
+<body>
+    {html_content}
+</body>
+</html>
+"""
+
+# Sauvegarder dans un fichier HTML
+html_file = r'C:\Users\maxen\Desktop\Maxence\IUT\BUT1\S1\SAE 1.5 Traiter des données\SAE1.5 GitHub\Projet\resultat.html'
+with open(html_file, "w", encoding="utf-8") as file:
+    file.write(html_with_structure)
+
+# Ouvrir automatiquement dans le navigateur
+webbrowser.open(html_file)
+
+print(f"Tableau Markdown converti en HTML et ouvert dans le navigateur : {html_file}")
