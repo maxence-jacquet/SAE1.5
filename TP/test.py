@@ -18,27 +18,34 @@ def construction_liste(row):
         txt_split = row.split(">")
         txt_split2 = txt_split[0].split("IP")
         heure = txt_split2[0].strip()
-        IP_source = txt_split2[1].strip()
+        IP_source_with_port = txt_split2[1].strip()
 
-        txt_split5 = txt_split[1].split(": ")
-        IP_destination = txt_split5[0].strip()
-        txt_split6 = txt_split5[1]
+        # Extraire le port source
+        if '.' in IP_source_with_port:
+            IP_source, port_source = IP_source_with_port.rsplit(".", 1)
+        else:
+            IP_source, port_source = IP_source_with_port, "Vide"
+
+        IP_destination_with_port = txt_split[1].split(":")[0].strip()
+        if '.' in IP_destination_with_port:
+            IP_destination, port_destination = IP_destination_with_port.rsplit(".", 1)
+        else:
+            IP_destination, port_destination = IP_destination_with_port, "Vide"
+
+        txt_split6 = txt_split[1].split(": ")[1]
         txt_split7 = txt_split6.split(", ")
 
-        txt_flag = txt_split7[0].strip()
-        txt_seq = txt_split7[1].strip() if len(txt_split7) > 1 else ""
-        txt_ack = txt_split7[2].strip() if len(txt_split7) > 2 else ""
-        txt_win = txt_split7[3].strip() if len(txt_split7) > 3 else ""
-        txt_contenu_option = f"[{txt_split7[4].strip()}]" if len(txt_split7) > 4 and 'options' in txt_split7[4] else ""
-        txt_leght = txt_split7[-1].strip() if txt_split7 else ""
+        # Gérer les colonnes optionnelles et longueur
+        txt_contenu_option = f"[{txt_split7[4].strip()}]" if len(txt_split7) > 4 and 'options' in txt_split7[4] else "Vide"
+        txt_leght = txt_split7[-1].strip() if txt_split7 else "Vide"
 
-        evenement = f"{heure};{IP_source};{IP_destination};{txt_flag};{txt_seq};{txt_ack};{txt_win};{txt_contenu_option};{txt_leght}"
+        evenement = f"{heure};{IP_source};{IP_destination};{port_source};{port_destination};{txt_contenu_option};{txt_leght}"
         valeur.append(evenement)
 
 lecture()
 
-# Générer le contenu Markdown avec un tableau
-titre = "Heure;IP Source;IP Destination;Flag;Seq;Ack;Win;Option;Length"
+# Générer le contenu Markdown avec une seule colonne pour le port
+titre = "Heure;IP Source;IP Destination;Port Source;Port Destination;Option;Length"
 headers = titre.split(";")
 markdown_content = f"| {' | '.join(headers)} |\n"
 markdown_content += f"| {' | '.join(['---'] * len(headers))} |\n"
